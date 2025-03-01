@@ -379,11 +379,15 @@ require('lazy').setup({
               '-g',
               '!**/node_modules/*',
               '-g',
+              '!**/dist/*',
+              '-g',
               '!**/.git/*',
               '-g',
               '!**/build/*',
               '-g',
               '!**/vendor/*',
+              '-g',
+              '!**/results/*',
             },
           },
         },
@@ -604,7 +608,7 @@ require('lazy').setup({
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         -- clangd = {},
-        gopls = {},
+        -- gopls = {},
         templ = {
           filetypes = { 'html', 'templ' },
         },
@@ -623,12 +627,28 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`tsserver`) will work just fine
-        tsserver = {
+        ts_ls = {
+          init_options = {
+            maxTsServerMemory = 8192,
+          },
+
           commands = {
             OrganizeImports = {
               organize_imports,
               description = 'Organize Imports',
             },
+          },
+          on_exit = function(_, code)
+            if code ~= 0 then
+              -- Restart tsserver if it exits with a non-zero exit code
+              vim.lsp.start_client {
+                name = 'tsserver',
+                cmd = { 'typescript-language-server', '--stdio' },
+              }
+            end
+          end,
+          flags = {
+            debounce_text_changes = 150,
           },
         },
 
@@ -681,7 +701,7 @@ require('lazy').setup({
 
   {
     'mistricky/codesnap.nvim',
-    build = 'make build_generator',
+    build = 'make',
     keys = {
       { '<leader>cc', '<CMD>CodeSnap<CR>', mode = 'x', desc = 'Save selected code snapshot into clipboard' },
       { '<leader>cs', '<CMD>CodeSnapSave<CR>', mode = 'x', desc = 'Save selected code snapshot into ~/Pictures' },
@@ -867,7 +887,12 @@ require('lazy').setup({
   },
 
   -- Highlight todo, notes, etc in comments
-  { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
+  {
+    'folke/todo-comments.nvim',
+    event = 'VimEnter',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    opts = { signs = false },
+  },
 
   { -- Collection of various small independent plugins/modules
     'echasnovski/mini.nvim',
@@ -910,7 +935,20 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'templ' },
+      ensure_installed = {
+        'bash',
+        'c',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'query',
+        'vim',
+        'vimdoc',
+        'templ',
+      },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -964,7 +1002,7 @@ require('lazy').setup({
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   --    For additional information, see `:help lazy.nvim-lazy.nvim-structuring-your-plugins`
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
