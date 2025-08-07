@@ -83,6 +83,7 @@ I hope you enjoy your Neovim journey,
 
 P.S. You can delete this when you're done too. It's your config now! :)
 --]]
+--vim.lsp.set_log_level 'debug'
 
 -- Set <space> as the leader key
 -- See `:help mapleader`
@@ -208,7 +209,13 @@ local function organize_imports()
   vim.lsp.buf.execute_command(params)
 end
 
-vim.keymap.set('n', 'gO', '<cmd>OrganizeImports<CR>', { desc = 'Organize imports' })
+-- vim.keymap.set('n', 'gO', '<cmd>OrganizeImports<CR>', { desc = 'Organize imports' })
+vim.keymap.set('n', 'gO', function()
+  vim.lsp.buf.execute_command {
+    command = '_typescript.organizeImports',
+    arguments = { vim.api.nvim_buf_get_name(0) },
+  }
+end, { desc = 'Organize imports' })
 
 vim.keymap.set('n', '<leader>U', vim.cmd.UndotreeToggle)
 
@@ -627,30 +634,35 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`tsserver`) will work just fine
-        ts_ls = {
-          init_options = {
-            maxTsServerMemory = 8192,
-          },
-
-          commands = {
-            OrganizeImports = {
-              organize_imports,
-              description = 'Organize Imports',
-            },
-          },
-          on_exit = function(_, code)
-            if code ~= 0 then
-              -- Restart tsserver if it exits with a non-zero exit code
-              vim.lsp.start_client {
-                name = 'tsserver',
-                cmd = { 'typescript-language-server', '--stdio' },
-              }
-            end
-          end,
-          flags = {
-            debounce_text_changes = 150,
-          },
-        },
+        -- ts_ls = {
+        --   cmd = { vim.fn.stdpath 'data' .. '/mason/bin/typescript-language-server', '--stdio' },
+        --   init_options = {
+        --     maxTsServerMemory = 8192,
+        --   },
+        --   settings = {
+        --     -- Add this block to enable logging
+        --     tsserver_log_file = vim.fn.stdpath 'cache' .. '/tsserver.log',
+        --     tsserver_log_verbosity = 'verbose',
+        --   },
+        --   commands = {
+        --     OrganizeImports = {
+        --       organize_imports,
+        --       description = 'Organize Imports',
+        --     },
+        --   },
+        --   on_exit = function(_, code)
+        --     if code ~= 0 then
+        --       -- Restart tsserver if it exits with a non-zero exit code
+        --       vim.lsp.start_client {
+        --         name = 'tsserver',
+        --         cmd = { 'typescript-language-server', '--stdio' },
+        --       }
+        --     end
+        --   end,
+        --   flags = {
+        --     debounce_text_changes = 150,
+        --   },
+        -- },
 
         lua_ls = {
           -- cmd = {...},
@@ -683,6 +695,19 @@ require('lazy').setup({
         'stylua', -- Used to format Lua code
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+
+      require('lspconfig').ts_ls.setup {
+        -- Use the global capabilities we defined a few lines above
+        capabilities = capabilities,
+
+        -- Explicitly set the command path
+        cmd = { vim.fn.stdpath 'data' .. '/mason/bin/typescript-language-server', '--stdio' },
+
+        -- Your custom initialization options
+        init_options = {
+          maxTsServerMemory = 8192,
+        },
+      }
 
       require('mason-lspconfig').setup {
         ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
