@@ -705,7 +705,7 @@ require('lazy').setup({
 
         -- Your custom initialization options
         init_options = {
-          maxTsServerMemory = 8192,
+          maxTsServerMemory = 16384,
         },
       }
 
